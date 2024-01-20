@@ -7,4 +7,5 @@ module rcp.tts {
 	requires transitive javafx.controls;
 	requires org.apache.commons.lang3;
 	requires java.base;
+	requires javafx.media;
 }

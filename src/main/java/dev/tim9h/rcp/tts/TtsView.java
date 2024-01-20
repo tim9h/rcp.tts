@@ -1,11 +1,17 @@
 package dev.tim9h.rcp.tts;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
@@ -15,6 +21,8 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Mode;
+import dev.tim9h.rcp.spi.TreeNode;
+import javafx.scene.media.AudioClip;
 
 public class TtsView implements CCard {
 
@@ -29,7 +37,17 @@ public class TtsView implements CCard {
 
 	private Process engine;
 
-	private static Pattern quoteSplitter = Pattern.compile("([^\"]\\S*|\"[^\"]++\")\\s*");
+	private final Pattern quoteSplitter;
+
+	private String engineApi;
+
+	private Queue<AudioClip> speechQueue;
+
+	private Thread voiceThread;
+
+	public TtsView() {
+		quoteSplitter = Pattern.compile("([^\"]\\S*|\"[^\"]++\")\\s*");
+	}
 
 	@Override
 	public String getName() {
@@ -42,27 +60,12 @@ public class TtsView implements CCard {
 
 			@Override
 			public void onEnable() {
-				eventManager.showWaitingIndicator();
-				var engineStarter = settings.getString(TtsViewFactory.SETTING_TTS_ENGINE_STARTER);
-				var args = quoteSplitter.matcher(engineStarter).results().map(t -> t.group().trim())
-						.toArray(String[]::new);
-
-				try {
-					engine = new ProcessBuilder(args).start();
-					logger.debug(() -> "TTS engine started - PID: " + engine.pid());
-				} catch (IOException e) {
-					logger.error(() -> "Unable to start TTS engine", e);
-				}
-				eventManager.echo("Speech output enabled");
+				startEngine();
 			}
 
 			@Override
 			public void onDisable() {
-				eventManager.showWaitingIndicator();
-				if (engine != null && engine.isAlive()) {
-					engine.destroy();
-				}
-				eventManager.echo("Speech output disabled");
+				shutdownEngine();
 			}
 
 			@Override
@@ -70,6 +73,118 @@ public class TtsView implements CCard {
 				return "speech";
 			}
 		}));
+	}
+
+	private void startEngine() {
+		eventManager.showWaitingIndicator();
+		CompletableFuture.runAsync(() -> {
+			var engineStarter = settings.getString(TtsViewFactory.SETTING_TTS_ENGINE_STARTER);
+			var args = quoteSplitter.matcher(engineStarter).results().map(t -> t.group().trim()).toArray(String[]::new);
+			try {
+				engine = new ProcessBuilder(args).start();
+				logger.info(() -> "TTS engine started - PID: " + engine.pid());
+				eventManager.echoAsync("Speech output enabled");
+			} catch (IOException e) {
+				logger.error(() -> "Unable to start TTS engine", e);
+				eventManager.echoAsync("Unable to start speech output");
+			}
+		});
+	}
+
+	private void shutdownEngine() {
+		eventManager.showWaitingIndicatorAsync();
+		CompletableFuture.runAsync(() -> {
+			if (engine != null && engine.isAlive()) {
+				engine.destroy();
+			}
+			logger.info(() -> "TTS engine thread stopped");
+			eventManager.echoAsync("Speech output disabled");
+		}).exceptionally(e -> {
+			logger.warn(() -> "Unable to stop speech engine", e);
+			return null;
+		});
+	}
+
+	@Override
+	public void onShutdown() {
+		shutdownEngine();
+	}
+
+	@Override
+	public void initBus(EventManager em) {
+		CCard.super.initBus(eventManager);
+//		em.listen(CcEvent.EVENT_CLI_RESPONSE, data -> say(StringUtils.join(data)));
+		em.listen("tts", data -> say(StringUtils.join(data, StringUtils.SPACE)));
+	}
+
+	private void say(String text) {
+		if (speechQueue == null) {
+			speechQueue = new LinkedBlockingQueue<>();
+		}
+		if (engineApi == null) {
+			engineApi = settings.getString(TtsViewFactory.SETTING_TTS_ENGINE_API);
+			if (StringUtils.isBlank(engineApi)) {
+				logger.warn(() -> "No TTS engine API found");
+				eventManager.echo("TTS not configured");
+				return;
+			}
+		}
+		initSpeechThread();
+
+		var response = URLEncoder.encode(text.replace("/", ". "), StandardCharsets.UTF_8);
+		var url = String.format(engineApi, response);
+
+		CompletableFuture.runAsync(() -> {
+			logger.debug(() -> "Fetching audio response from: " + url);
+			var speech = new AudioClip(url);
+			var added = speechQueue.offer(speech);
+			logger.debug(() -> "Added to queue: " + added);
+		}).exceptionally(e -> {
+			logger.error(() -> "Unable to fetch speech output from " + url, e);
+			return null;
+		});
+	}
+
+	private void initSpeechThread() {
+		if (voiceThread == null) {
+			voiceThread = new Thread(() -> {
+				logger.info(() -> "Speech thread initialized");
+				while (engine.isAlive()) {
+					handleSpeechQueue();
+				}
+			}, "tts");
+			voiceThread.start();
+		}
+	}
+
+	private void handleSpeechQueue() {
+		if (!speechQueue.isEmpty()) {
+			try {
+				var speech = speechQueue.poll();
+				if (speech != null) {
+					speech.play();
+					while (speech.isPlaying()) {
+						Thread.sleep(500);
+					}
+				} else {
+					logger.warn(() -> "Speech is null but queue not empty");
+				}
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				logger.warn(() -> "Error in speech queue", e);
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+
+	@Override
+	public void onSettingsChanged() {
+		engineApi = null;
+	}
+
+	@Override
+	public Optional<TreeNode<String>> getModelessCommands() {
+		return Optional.of(new TreeNode<>("tts"));
 	}
 
 }
