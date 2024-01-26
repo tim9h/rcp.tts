@@ -16,6 +16,8 @@ public class TtsViewFactory implements CCardFactory {
 
 	static final String SETTING_TTS_ENGINE_API = "tts.engine.api";
 
+	static final String SETTING_MODES = "core.modes";
+
 	@Inject
 	private TtsView view;
 

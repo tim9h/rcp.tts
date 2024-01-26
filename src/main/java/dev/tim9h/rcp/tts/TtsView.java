@@ -131,7 +131,7 @@ public class TtsView implements CCard {
 		}
 		initSpeechThread();
 
-		var response = URLEncoder.encode(text.replace("/", ". "), StandardCharsets.UTF_8);
+		var response = removeIllegalCharacters(text);
 		var url = String.format(engineApi, response);
 
 		CompletableFuture.runAsync(() -> {
@@ -143,6 +143,12 @@ public class TtsView implements CCard {
 			logger.error(() -> "Unable to fetch speech output from " + url, e);
 			return null;
 		});
+	}
+
+	private static String removeIllegalCharacters(String text) {
+		// TODO: add additional replaces
+		var safeString = text.replace("/", ". ");
+		return URLEncoder.encode(safeString, StandardCharsets.UTF_8);
 	}
 
 	private void initSpeechThread() {
@@ -161,7 +167,7 @@ public class TtsView implements CCard {
 		if (!speechQueue.isEmpty()) {
 			try {
 				var speech = speechQueue.poll();
-				if (speech != null) {
+				if (speech != null && !settings.getStringSet(TtsViewFactory.SETTING_MODES).contains("dnd")) {
 					speech.play();
 					while (speech.isPlaying()) {
 						Thread.sleep(500);
