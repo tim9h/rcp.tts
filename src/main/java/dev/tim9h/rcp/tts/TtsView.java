@@ -39,6 +39,8 @@ public class TtsView implements CCard {
 
 	private final Pattern quoteSplitter;
 
+	private final Pattern illegalCharRemover;
+
 	private String engineApi;
 
 	private Queue<AudioClip> speechQueue;
@@ -47,6 +49,7 @@ public class TtsView implements CCard {
 
 	public TtsView() {
 		quoteSplitter = Pattern.compile("([^\"]\\S*|\"[^\"]++\")\\s*");
+		illegalCharRemover = Pattern.compile("[^a-zA-Z0-9,\\.\\!ß]");
 	}
 
 	@Override
@@ -118,6 +121,14 @@ public class TtsView implements CCard {
 	}
 
 	private void say(String text) {
+		if (StringUtils.isBlank(text)) {
+			eventManager.echo("What?");
+			return;
+		}
+		if (engine == null || !engine.isAlive()) {
+			eventManager.echo("TTS engine not started", "Start TTS engine with 'speech' mode");
+		}
+
 		if (speechQueue == null) {
 			speechQueue = new LinkedBlockingQueue<>();
 		}
@@ -145,10 +156,12 @@ public class TtsView implements CCard {
 		});
 	}
 
-	private static String removeIllegalCharacters(String text) {
-		// TODO: add additional replaces
-		var safeString = text.replace("/", ". ");
-		return URLEncoder.encode(safeString, StandardCharsets.UTF_8);
+	private String removeIllegalCharacters(String text) {
+		var noaccents = StringUtils.stripAccents(text);
+		var safeChars = illegalCharRemover.matcher(noaccents).replaceAll(StringUtils.SPACE).strip();
+		var encoded = URLEncoder.encode(safeChars, StandardCharsets.UTF_8);
+		logger.debug(() -> String.format("Decoded for TTS:%n Input:  %s%n Output: %s", text, encoded));
+		return encoded;
 	}
 
 	private void initSpeechThread() {
@@ -158,6 +171,7 @@ public class TtsView implements CCard {
 				while (engine.isAlive()) {
 					handleSpeechQueue();
 				}
+				logger.info(() -> "TTS engine stopped. Terminating speech thread.");
 			}, "tts");
 			voiceThread.start();
 		}
@@ -167,13 +181,15 @@ public class TtsView implements CCard {
 		if (!speechQueue.isEmpty()) {
 			try {
 				var speech = speechQueue.poll();
-				if (speech != null && !settings.getStringSet(TtsViewFactory.SETTING_MODES).contains("dnd")) {
-					speech.play();
+				if (speech != null) {
+					if (!settings.getStringSet(TtsViewFactory.SETTING_MODES).contains("dnd")) {
+						speech.play();
+					} else {
+						logger.debug(() -> "Suppressing tts output (dnd mode)");
+					}
 					while (speech.isPlaying()) {
 						Thread.sleep(500);
 					}
-				} else {
-					logger.warn(() -> "Speech is null but queue not empty");
 				}
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
