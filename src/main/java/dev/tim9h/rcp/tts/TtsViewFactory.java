@@ -12,11 +12,11 @@ import dev.tim9h.rcp.spi.CCardFactory;
 
 public class TtsViewFactory implements CCardFactory {
 
-	static final String SETTING_TTS_ENGINE_STARTER = "tts.engine.starter";
+	public static final String SETTING_TTS_ENGINE_STARTER = "tts.engine.starter";
 
-	static final String SETTING_TTS_ENGINE_API = "tts.engine.api";
+	public static final String SETTING_TTS_ENGINE_API = "tts.engine.api";
 
-	static final String SETTING_MODES = "core.modes";
+	public static final String SETTING_MODES = "core.modes";
 
 	@Inject
 	private TtsView view;
