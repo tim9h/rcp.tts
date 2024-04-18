@@ -21,6 +21,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.tts.TtsViewFactory;
+import javafx.application.Platform;
 
 @Singleton
 public class TtsEngine {
@@ -42,27 +43,37 @@ public class TtsEngine {
 
 	private AtomicBoolean engineLogging;
 
+	private AtomicBoolean running;
+
 	public TtsEngine() {
 		quoteSplitter = Pattern.compile("([^\"]\\S*|\"[^\"]++\")\\s*");
 		engineLogging = new AtomicBoolean(false);
+		running = new AtomicBoolean(false);
 	}
 
-	public void start() {
+	public CompletableFuture<TtsEngine> start() {
 		eventManager.showWaitingIndicator();
-		CompletableFuture.runAsync(() -> {
+		return CompletableFuture.supplyAsync(() -> {
 			if (getEngineStarter() != null) {
 				var args = quoteSplitter.matcher(engineStarter).results().map(t -> t.group().trim())
 						.toArray(String[]::new);
 				try {
 					process = new ProcessBuilder(args).redirectOutput(PIPE).redirectError(PIPE).start();
-					handleStreamOutput(process.getErrorStream(), Level.ERROR);
 					logger.info(() -> "TTS engine started - PID: " + process.pid());
 					eventManager.echoAsync("Speech output enabled");
-				} catch (IOException e) {
+					Platform.runLater(new Thread(() -> handleStreamOutput(process.getErrorStream(), Level.ERROR),
+							"tts-console")::start);
+					while (!isRunning()) {
+						Thread.sleep(200);
+					}
+					eventManager.textToSpeechAsync("ohai");
+				} catch (IOException | InterruptedException e) {
 					logger.error(() -> "Unable to start TTS engine", e);
 					eventManager.echoAsync("Unable to start speech output");
+					Thread.currentThread().interrupt();
 				}
 			}
+			return this;
 		});
 	}
 
@@ -70,6 +81,9 @@ public class TtsEngine {
 		try (var reader = new BufferedReader(new InputStreamReader(inputStream))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
+				if (line.contains("* Running on all addresses")) {
+					running.set(true);
+				}
 				if (line.contains("ERROR in app")) {
 					engineLogging.set(true);
 				}
@@ -85,6 +99,7 @@ public class TtsEngine {
 	public void stop() {
 		eventManager.showWaitingIndicatorAsync();
 		CompletableFuture.runAsync(() -> {
+			running.set(false);
 			if (process != null && process.isAlive()) {
 				process.destroy();
 			}
@@ -97,7 +112,7 @@ public class TtsEngine {
 	}
 
 	public boolean isRunning() {
-		return process != null && process.isAlive();
+		return process != null && process.isAlive() && running.get();
 	}
 
 	private String getEngineStarter() {

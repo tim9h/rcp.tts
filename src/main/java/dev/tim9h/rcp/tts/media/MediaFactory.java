@@ -44,17 +44,12 @@ public class MediaFactory {
 		if (getEngineApi() == null) {
 			return null;
 		}
-
 		var response = removeIllegalCharacters(text);
-
 		if (response == null) {
 			return null;
 		}
-
 		var url = String.format(engineApi, response);
-
 		logger.debug(() -> "Audio url: " + url);
-
 		return new Media(url);
 	}
 

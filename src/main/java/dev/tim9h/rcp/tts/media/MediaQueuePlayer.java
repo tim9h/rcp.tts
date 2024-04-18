@@ -71,7 +71,7 @@ public class MediaQueuePlayer implements Runnable {
 		if (!settings.getStringSet(TtsViewFactory.SETTING_MODES).contains("dnd")) {
 			currentPlayer = new MediaPlayer(media);
 			currentPlayer.setOnEndOfMedia(this::playNext);
-			currentPlayer.setOnError(() -> handlePlayerError(currentPlayer.getError()));
+			currentPlayer.setOnError(() -> handlePlayerError(media, currentPlayer.getError()));
 			currentPlayer.play();
 		} else {
 			logger.debug(() -> "Suppressing TTS output (DND mode)");
@@ -95,11 +95,12 @@ public class MediaQueuePlayer implements Runnable {
 		return success;
 	}
 
-	private void handlePlayerError(MediaException error) {
+	private void handlePlayerError(Media media, MediaException error) {
 		if (error == null || error.getMessage() == null) {
 			logger.error(() -> "Error during media playback");
 		} else {
-			logger.error(() -> "Error during media playback: " + error.getMessage());
+			logger.error(
+					() -> String.format("Error during media playback (%s): %s", media.getSource(), error.getMessage()));
 		}
 	}
 

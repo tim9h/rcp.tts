@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
 
+import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.spi.CCard;
@@ -46,6 +47,7 @@ public class TtsView implements CCard {
 
 			@Override
 			public void onEnable() {
+//				engine.start().thenRun(() -> Platform.runLater(() -> say("ohai")));
 				engine.start();
 			}
 
@@ -69,8 +71,21 @@ public class TtsView implements CCard {
 	@Override
 	public void initBus(EventManager em) {
 		CCard.super.initBus(eventManager);
-//		em.listen(CcEvent.EVENT_CLI_RESPONSE, data -> say(StringUtils.join(data)));
 		em.listen("tts", data -> say(StringUtils.join(data, StringUtils.SPACE)));
+		em.listen(CcEvent.EVENT_CLOSING, data -> say("kay thanks.bye"));
+		em.listen("MODE_AFK", data -> {
+			var state = StringUtils.join(data);
+			if ("off".equals(state)) {
+				say("welcome back");
+			} else if ("on".equals(state)) {
+				say("see you.later");
+			}
+		});
+		em.listen("MODE_ALERT", data -> {
+			if (StringUtils.join(data).equals("on")) {
+				say("alert!");
+			}
+		});
 	}
 
 	private void say(String text) {
@@ -80,7 +95,10 @@ public class TtsView implements CCard {
 		}
 		var media = mediaFactory.query(text);
 		if (media != null) {
+			logger.debug(() -> "TTS: " + text);
 			queue.addMedia(media);
+		} else {
+			logger.debug(() -> "Error during TTS media generation for: " + text);
 		}
 	}
 
