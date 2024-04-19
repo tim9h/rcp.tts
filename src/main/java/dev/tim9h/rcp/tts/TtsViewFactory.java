@@ -16,6 +16,8 @@ public class TtsViewFactory implements CCardFactory {
 
 	public static final String SETTING_TTS_ENGINE_API = "tts.engine.api";
 
+	public static final String SETTING_TTS_VOLUME = "tts.volume";
+
 	public static final String SETTING_MODES = "core.modes";
 
 	@Inject
@@ -36,6 +38,7 @@ public class TtsViewFactory implements CCardFactory {
 		Map<String, String> settings = new HashMap<>();
 		settings.put(SETTING_TTS_ENGINE_STARTER, StringUtils.EMPTY);
 		settings.put(SETTING_TTS_ENGINE_API, StringUtils.EMPTY);
+		settings.put(SETTING_TTS_VOLUME, "1.0");
 		return settings;
 	}
 

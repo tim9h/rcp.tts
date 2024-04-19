@@ -72,6 +72,7 @@ public class MediaQueuePlayer implements Runnable {
 			currentPlayer = new MediaPlayer(media);
 			currentPlayer.setOnEndOfMedia(this::playNext);
 			currentPlayer.setOnError(() -> handlePlayerError(media, currentPlayer.getError()));
+			currentPlayer.setVolume(settings.getDouble(TtsViewFactory.SETTING_TTS_VOLUME).doubleValue());
 			currentPlayer.play();
 		} else {
 			logger.debug(() -> "Suppressing TTS output (DND mode)");
