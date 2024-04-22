@@ -66,7 +66,7 @@ public class TtsEngine {
 					while (!isRunning()) {
 						Thread.sleep(200);
 					}
-					eventManager.textToSpeechAsync("ohai");
+					eventManager.sayAsync("application.starting");
 					eventManager.echoAsync("Ohai");
 				} catch (IOException | InterruptedException e) {
 					logger.error(() -> "Unable to start TTS engine", e);

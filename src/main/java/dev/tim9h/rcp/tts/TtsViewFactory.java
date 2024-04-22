@@ -20,6 +20,8 @@ public class TtsViewFactory implements CCardFactory {
 
 	public static final String SETTING_MODES = "core.modes";
 
+	public static final String SETTING_DICT_NAME = "tts.dict.name";
+
 	@Inject
 	private TtsView view;
 
@@ -39,6 +41,7 @@ public class TtsViewFactory implements CCardFactory {
 		settings.put(SETTING_TTS_ENGINE_STARTER, StringUtils.EMPTY);
 		settings.put(SETTING_TTS_ENGINE_API, StringUtils.EMPTY);
 		settings.put(SETTING_TTS_VOLUME, "1.0");
+		settings.put(SETTING_DICT_NAME, "default");
 		return settings;
 	}
 

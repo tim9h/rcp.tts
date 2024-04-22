@@ -8,4 +8,5 @@ module rcp.tts {
 	requires org.apache.commons.lang3;
 	requires java.base;
 	requires javafx.media;
+	requires java.desktop;
 }

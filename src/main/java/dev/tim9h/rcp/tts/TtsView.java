@@ -15,6 +15,7 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Mode;
 import dev.tim9h.rcp.spi.TreeNode;
+import dev.tim9h.rcp.tts.dictionary.DictionaryService;
 import dev.tim9h.rcp.tts.media.MediaFactory;
 import dev.tim9h.rcp.tts.media.MediaQueuePlayer;
 import dev.tim9h.rcp.tts.media.TtsEngine;
@@ -36,6 +37,9 @@ public class TtsView implements CCard {
 	@Inject
 	private MediaFactory mediaFactory;
 
+	@Inject
+	private DictionaryService dictionary;
+
 	@Override
 	public String getName() {
 		return "tts";
@@ -47,7 +51,6 @@ public class TtsView implements CCard {
 
 			@Override
 			public void onEnable() {
-//				engine.start().thenRun(() -> Platform.runLater(() -> say("ohai")));
 				engine.start();
 			}
 
@@ -71,24 +74,26 @@ public class TtsView implements CCard {
 	@Override
 	public void initBus(EventManager em) {
 		CCard.super.initBus(eventManager);
-		em.listen("tts", data -> say(StringUtils.join(data, StringUtils.SPACE)));
-		em.listen(CcEvent.EVENT_CLOSING, data -> say("kay thanks.bye"));
+		em.listen(CcEvent.EVENT_TTS, data -> synthesize(StringUtils.join(data, StringUtils.SPACE)));
+		em.listen(CcEvent.EVENT_SAY, data -> say(StringUtils.join(data, StringUtils.SPACE)));
+		em.listen(CcEvent.EVENT_CLOSING, data -> say("application.closing"));
 		em.listen("MODE_AFK", data -> {
 			var state = StringUtils.join(data);
 			if ("off".equals(state)) {
-				say("welcome back");
+				say("mode.afk.off");
 			} else if ("on".equals(state)) {
-				say("see you.later");
+				say("mode.afk.on");
 			}
 		});
 		em.listen("MODE_ALERT", data -> {
 			if (StringUtils.join(data).equals("on")) {
-				say("alert!");
+				say("mode.alert.on");
 			}
 		});
+		em.listen("dictionary", data -> dictionary.edit());
 	}
 
-	private void say(String text) {
+	private void synthesize(String text) {
 		if (!engine.isRunning()) {
 			eventManager.echo("TTS engine not started", "Start TTS engine with 'speech' mode");
 			return;
@@ -102,15 +107,23 @@ public class TtsView implements CCard {
 		}
 	}
 
+	private void say(String dictId) {
+		synthesize(dictionary.get(dictId));
+	}
+
 	@Override
 	public Optional<TreeNode<String>> getModelessCommands() {
-		return Optional.of(new TreeNode<>("tts"));
+		var tree = new TreeNode<>(StringUtils.EMPTY);
+		tree.add("tts");
+		tree.add("dictionary");
+		return Optional.of(tree);
 	}
 
 	@Override
 	public void onSettingsChanged() {
 		engine.onSettingsChanged();
 		mediaFactory.onSettingsChanged();
+		dictionary.onSettingsChanged();
 	}
 
 }
