@@ -76,7 +76,7 @@ public class TtsView implements CCard {
 		CCard.super.initBus(eventManager);
 		em.listen(CcEvent.EVENT_TTS, data -> synthesize(StringUtils.join(data, StringUtils.SPACE)));
 		em.listen(CcEvent.EVENT_SAY, data -> say(StringUtils.join(data, StringUtils.SPACE)));
-		em.listen(CcEvent.EVENT_CLOSING, data -> say("application.closing"));
+		em.listen(CcEvent.EVENT_CLOSING, _ -> say("application.closing"));
 		em.listen("MODE_AFK", data -> {
 			var state = StringUtils.join(data);
 			if ("off".equals(state)) {
@@ -90,7 +90,7 @@ public class TtsView implements CCard {
 				say("mode.alert.on");
 			}
 		});
-		em.listen("dictionary", data -> dictionary.edit());
+		em.listen("dictionary", _ -> dictionary.edit());
 	}
 
 	private void synthesize(String text) {
