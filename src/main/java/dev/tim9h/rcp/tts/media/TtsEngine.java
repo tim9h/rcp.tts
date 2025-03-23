@@ -60,17 +60,17 @@ public class TtsEngine {
 				try {
 					process = new ProcessBuilder(args).redirectOutput(PIPE).redirectError(PIPE).start();
 					logger.info(() -> "TTS engine started - PID: " + process.pid());
-					eventManager.echoAsync("Speech output enabled");
+					eventManager.echo("Speech output enabled");
 					Platform.runLater(new Thread(() -> handleStreamOutput(process.getErrorStream(), Level.ERROR),
 							"tts-console")::start);
 					while (!isRunning()) {
 						Thread.sleep(200);
 					}
 					eventManager.sayAsync("application.starting");
-					eventManager.echoAsync("Ohai");
+					eventManager.echo("Ohai");
 				} catch (IOException | InterruptedException e) {
 					logger.error(() -> "Unable to start TTS engine", e);
-					eventManager.echoAsync("Unable to start speech output");
+					eventManager.echo("Unable to start speech output");
 					Thread.currentThread().interrupt();
 				}
 			}
@@ -105,7 +105,7 @@ public class TtsEngine {
 				process.destroy();
 			}
 			logger.info(() -> "TTS engine stopped");
-			eventManager.echoAsync("Speech output disabled");
+			eventManager.echo("Speech output disabled");
 		}).exceptionally(e -> {
 			logger.warn(() -> "Unable to stop speech engine", e);
 			return null;
