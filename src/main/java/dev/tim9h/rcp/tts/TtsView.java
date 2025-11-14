@@ -14,6 +14,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Mode;
+import dev.tim9h.rcp.spi.StringNode;
 import dev.tim9h.rcp.spi.TreeNode;
 import dev.tim9h.rcp.tts.dictionary.DictionaryService;
 import dev.tim9h.rcp.tts.media.MediaFactory;
@@ -113,7 +114,7 @@ public class TtsView implements CCard {
 
 	@Override
 	public Optional<TreeNode<String>> getModelessCommands() {
-		var tree = new TreeNode<>(StringUtils.EMPTY);
+		var tree = new StringNode();
 		tree.add("tts");
 		tree.add("dictionary");
 		return Optional.of(tree);
