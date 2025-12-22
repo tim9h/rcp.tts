@@ -12,8 +12,8 @@ import com.google.inject.Inject;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
-import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Mode;
+import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.StringNode;
 import dev.tim9h.rcp.spi.TreeNode;
 import dev.tim9h.rcp.tts.dictionary.DictionaryService;
@@ -21,7 +21,7 @@ import dev.tim9h.rcp.tts.media.MediaFactory;
 import dev.tim9h.rcp.tts.media.MediaQueuePlayer;
 import dev.tim9h.rcp.tts.media.TtsEngine;
 
-public class TtsView implements CCard {
+public class TtsView implements Plugin {
 
 	@InjectLogger
 	private Logger logger;
@@ -74,7 +74,7 @@ public class TtsView implements CCard {
 
 	@Override
 	public void initBus(EventManager em) {
-		CCard.super.initBus(eventManager);
+		Plugin.super.initBus(eventManager);
 		em.listen(CcEvent.EVENT_TTS, data -> synthesize(StringUtils.join(data, StringUtils.SPACE)));
 		em.listen(CcEvent.EVENT_SAY, data -> say(StringUtils.join(data, StringUtils.SPACE)));
 		em.listen(CcEvent.EVENT_CLOSING, _ -> say("application.closing"));

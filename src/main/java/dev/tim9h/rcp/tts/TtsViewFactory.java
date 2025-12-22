@@ -7,10 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.spi.CCard;
-import dev.tim9h.rcp.spi.CCardFactory;
+import dev.tim9h.rcp.spi.Plugin;
+import dev.tim9h.rcp.spi.PluginFactory;
 
-public class TtsViewFactory implements CCardFactory {
+public class TtsViewFactory implements PluginFactory {
 
 	public static final String SETTING_TTS_ENGINE_STARTER = "tts.engine.starter";
 
@@ -31,7 +31,7 @@ public class TtsViewFactory implements CCardFactory {
 	}
 
 	@Override
-	public CCard createCCard() {
+	public Plugin create() {
 		return view;
 	}
 
