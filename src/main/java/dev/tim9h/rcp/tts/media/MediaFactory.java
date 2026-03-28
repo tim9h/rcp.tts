@@ -13,7 +13,7 @@ import com.google.inject.Singleton;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.tts.TtsViewFactory;
+import dev.tim9h.rcp.tts.TtsView;
 import javafx.scene.media.Media;
 
 @Singleton
@@ -55,7 +55,7 @@ public class MediaFactory {
 
 	private String getEngineApi() {
 		if (StringUtils.isBlank(engineApi)) {
-			engineApi = settings.getString(TtsViewFactory.SETTING_TTS_ENGINE_API);
+			engineApi = settings.getString(TtsView.SETTING_TTS_ENGINE_API);
 			if (StringUtils.isBlank(engineApi)) {
 				logger.warn(() -> "No TTS engine API found");
 				eventManager.echo("TTS not configured");

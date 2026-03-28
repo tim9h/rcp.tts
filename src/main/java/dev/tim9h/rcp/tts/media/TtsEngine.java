@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.tts.TtsViewFactory;
+import dev.tim9h.rcp.tts.TtsView;
 import javafx.application.Platform;
 
 @Singleton
@@ -118,7 +118,7 @@ public class TtsEngine {
 
 	private String getEngineStarter() {
 		if (StringUtils.isBlank(engineStarter)) {
-			engineStarter = settings.getString(TtsViewFactory.SETTING_TTS_ENGINE_STARTER);
+			engineStarter = settings.getString(TtsView.SETTING_TTS_ENGINE_STARTER);
 			if (StringUtils.isBlank(engineStarter)) {
 				logger.warn(() -> "No TTS engine starter found");
 				eventManager.echo("Engine starter not configured");

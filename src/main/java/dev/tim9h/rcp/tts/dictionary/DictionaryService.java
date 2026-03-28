@@ -16,7 +16,7 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.tts.TtsViewFactory;
+import dev.tim9h.rcp.tts.TtsView;
 
 @Singleton
 public class DictionaryService {
@@ -56,7 +56,7 @@ public class DictionaryService {
 
 	private String getDictName() {
 		if (dictName == null) {
-			dictName = settings.getString(TtsViewFactory.SETTING_DICT_NAME);
+			dictName = settings.getString(TtsView.SETTING_DICT_NAME);
 		}
 		return dictName;
 	}

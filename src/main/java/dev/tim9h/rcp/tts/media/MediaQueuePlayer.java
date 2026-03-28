@@ -10,7 +10,7 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.tts.TtsViewFactory;
+import dev.tim9h.rcp.tts.TtsView;
 import javafx.application.Platform;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
@@ -68,11 +68,11 @@ public class MediaQueuePlayer implements Runnable {
 
 	private void playMedia(Media media) {
 		logger.debug(() -> "Playing media");
-		if (!settings.getStringSet(TtsViewFactory.SETTING_MODES).contains("dnd")) {
+		if (!settings.getStringSet(TtsView.SETTING_MODES).contains("dnd")) {
 			currentPlayer = new MediaPlayer(media);
 			currentPlayer.setOnEndOfMedia(this::playNext);
 			currentPlayer.setOnError(() -> handlePlayerError(media, currentPlayer.getError()));
-			currentPlayer.setVolume(settings.getDouble(TtsViewFactory.SETTING_TTS_VOLUME).doubleValue());
+			currentPlayer.setVolume(settings.getDouble(TtsView.SETTING_TTS_VOLUME).doubleValue());
 			currentPlayer.play();
 		} else {
 			logger.debug(() -> "Suppressing TTS output (DND mode)");

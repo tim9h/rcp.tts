@@ -1,7 +1,9 @@
 package dev.tim9h.rcp.tts;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,16 @@ import dev.tim9h.rcp.tts.media.TtsEngine;
 
 public class TtsView implements Plugin {
 
+	public static final String SETTING_TTS_ENGINE_STARTER = "tts.engine.starter";
+
+	public static final String SETTING_TTS_ENGINE_API = "tts.engine.api";
+
+	public static final String SETTING_TTS_VOLUME = "tts.volume";
+
+	public static final String SETTING_MODES = "core.modes";
+
+	public static final String SETTING_DICT_NAME = "tts.dict.name";
+
 	@InjectLogger
 	private Logger logger;
 
@@ -43,6 +55,11 @@ public class TtsView implements Plugin {
 
 	@Override
 	public String getName() {
+		return "Text to Speech";
+	}
+
+	@Override
+	public String getId() {
 		return "tts";
 	}
 
@@ -125,6 +142,16 @@ public class TtsView implements Plugin {
 		engine.onSettingsChanged();
 		mediaFactory.onSettingsChanged();
 		dictionary.onSettingsChanged();
+	}
+
+	@Override
+	public Map<String, String> getSettingsContributions() {
+		Map<String, String> settings = new HashMap<>();
+		settings.put(SETTING_TTS_ENGINE_STARTER, StringUtils.EMPTY);
+		settings.put(SETTING_TTS_ENGINE_API, StringUtils.EMPTY);
+		settings.put(SETTING_TTS_VOLUME, "1.0");
+		settings.put(SETTING_DICT_NAME, "default");
+		return settings;
 	}
 
 }
